@@ -6,7 +6,6 @@ const campsiteRouter = express.Router()
 //Chain all methods with same path together. removing the word "app" from methods and '/campsites' from .route() because it is already defined in the route in server.js
 campsiteRouter.route('/')
 
-
 .get((req, res, next) => {
     Campsite.find() //Queries the database for all the documents in the campsite model
     .then( campsites =>{ //accesses the results from the find method 

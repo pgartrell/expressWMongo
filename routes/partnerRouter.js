@@ -1,20 +1,30 @@
 const express =  require('express')
+const Partner = require('../models/partner')
+
 const partnerRouter = express.Router()
 
-partnerRouter.route('/partner')
-.all((req, res, next) => { //catch all routing method. Any http req will trigger this method
-    res.statusCode = 200
-    res.setHeader('Content-Type', 'text/plain') //send back plain text in response body
-    next() //Pass control to the next available routing method
-})
+partnerRouter.route('/')
 
 //No need for setHeader or statusCode bc we did this above
-.get((req, res) => {
-    res.end('Will send all the partners to you')//Sends message back to the client
+.get((req, res, next) => {
+    Partner.find() //Queries the database for all the documents in the campsite model
+    .then( partners =>{ //accesses the results from the find method 
+        res.statusCode = 200
+        res.header('Content-Type', 'application/json')
+        res.json(partners) //sends json data to the client in the response stream and will automatically close it. So res.end is not needed
+    })
+    .catch(err => next(err)) //passes error to express
 })
 
-.post((req, res) => {
-    res.end(`Will add the the partners: ${req.body.name} with description: ${req.body.description}`)
+.post((req, res, next) => {
+    Partner.create(req.body) //Create new campsite from the info on request body. It will also check the data to make sure it fits the Schema 
+    .then(partner => {
+        console.log('Partner Created', partner)
+        res.statusCode = 200
+        res.header('Content-Type', 'application/json')
+        res.json(partner)
+    })
+    .catch(err => next(err))
 })
 
 .put((req, res) => {
@@ -22,36 +32,57 @@ partnerRouter.route('/partner')
     res.end('PUT operation not supported on /partners')
 })
 
-.delete((req, res) => {
-    res.end('Deleting all partners')
+.delete((req, res,next) => {
+    Partner.deleteMany()
+    //reponse object tells us how many documents we have deleted 
+    .then(response => {
+        res.statusCode = 200
+        res.header('Content-Type', 'application/json')
+        res.json(response)
+    })
+    .catch(err => next(err))
 });
 
 
+
 partnerRouter.route('/:partnerId')
-.all((req, res, next) => { //catch all routing method. Any http req will trigger this method
-    res.statusCode = 200
-    res.setHeader('Content-Type', 'text/plain') //send back plain text in response body
-    next() //Pass control to the next available routing method
-})
 
 // Allow us to store whatever the client sends as part of the path after the / as a route param named campsiteId
-.get((req, res) => {
-    res.end(`Will send details of the partners: ${req.params.partnerId} to you`)
+.get((req, res, next) => {
+    Partner.findById(req.params.partnerId) //Getting parsed from the HTTP request from whatever the user typed in 
+    .then(partner => {
+        res.statusCode = 200
+        res.header('Content-Type', 'application/json')
+        res.json(partner)
+    })
+    .catch(err => next(err))
 })
-
 .post((req, res) => {
     res.statusCode = 403
     res.end(`POST operation not supported on /partners/${req.params.partnerId}`);
 })
 
-.put((req, res) => {
-    res.write(`Updating the partners: ${req.params.partnerId}\n`);
-    res.end(`Will update the partners: ${req.body.name}
-        with description: ${req.body.description}`);
+.put((req, res, next) => {
+    Partner.findByIdAndUpdate(req.params.partnerId, {
+        $set: req.body
+    }, { new: true }) //To get back info from updated document as a result of this operation
+    //Once document is sent back, execute below code 
+    .then(partner => {
+        res.statusCode = 200
+        res.header('Content-Type', 'application/json')
+        res.json(partner)
+    })
+    .catch(err => next(err))
 })
 
-.delete((req, res) => {
-    res.end(`Deleting partners: ${req.params.partnerId}`);
-});
+.delete((req, res, next) => {
+    Partner.findByIdAndDelete(req.params.partnerId)
+    .then(response => {
+        res.statusCode = 200
+        res.header('Content-Type', 'application/json')
+        res.json(response)
+    })
+    .catch(err => next(err))
+})
 
 module.exports = partnerRouter
