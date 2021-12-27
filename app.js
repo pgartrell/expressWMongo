@@ -35,6 +35,35 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+
+//Authentication is put here so that users have to authenticate before they access any data in the server
+function auth(req, res, next) {
+  console.log(req.headers)
+  const authHeader = req.headers.authorization
+  //If the client has not authenticated then we go into the if statement 
+  if (!authHeader) {
+    const err = new Error('You are not authenticated')
+    res.setHeader('WWW-Authenticate', 'Basic')
+    err.status = 401
+    return next(err)//sends authentication err message and request back to the client
+  }
+
+  //Buffer is a global class in node. So no need to require it
+  const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
+  const user = auth[0]
+  const pass = auth[1]
+  if (user === 'admin' && pass === 'password'){
+    return next() //has been authorized
+  } else{
+    const err = new Error('You are not authenticated!')
+    res.setHeader('WWW-Authenticate', 'Basic');
+    err.status = 401
+    return next(err)
+  }
+}
+
+app.use(auth) //parse the auth header and validate the username and password
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
