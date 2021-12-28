@@ -5,6 +5,8 @@ var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 const session = require('express-session') //session is used to store information permanantly from session to session unlike cookies that just store it locally
 const FileStore = require('session-file-store')(session) //The require function is returning another function as its return value and we are calling the function with session
+const passport = require('passport')
+const authenticate = require('./authenticate') //This is a file we added to our project
 
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
@@ -48,27 +50,26 @@ app.use(session({
   store: new FileStore() //Creates the new filestore as an object that we can save our session information to the harddisk
 }))
 
+//these two are only needed with session based authentication. Uses passport to check for exisiting sessions with that client. And if so it is loaded from the client as req.user
+app.use(passport.initialize())
+app.use(passport.session()) 
+
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
 
 //Authentication is put here so that users have to authenticate before they access any data in the server
 function auth(req, res, next) {
-  console.log(req.session)
-  //This says, is the usr not authenticated? Then send 401 error
-  if (!req.session.user) {
+  console.log(req.user)
+
+  //This says, is the user not authenticated? Then send 401 error
+  if (!req.user) {
       const err = new Error("You are not authenticated");
       err.status = 401;
       return next(err); //sends error to express to handle the error messaging sent back to client
     
-      //If there is a signed cookie
+      //If there authentication, pass the client to the next middleware
   } else {
-    if (req.session.user === "authenticated") {
-      return next();
-    } else {
-      const err = new Error("You are not authenticated!");
-      err.status = 401;
-      return next(err);
-    }
+      return next();    
   }
 }
 
