@@ -14,7 +14,7 @@ const partnerRouter = require("./routes/partnerRouter");
 
 const mongoose = require("mongoose");
 
-const url = "mongodb://localhost:27017/nucampsite";
+const url = "mongodb://localhost:27017/nucampsite"; //This connects Node.js to MongoDB
 const connect = mongoose.connect(url, {
   useCreateIndex: true,
   useFindAndModify: false,
@@ -48,38 +48,21 @@ app.use(session({
   store: new FileStore() //Creates the new filestore as an object that we can save our session information to the harddisk
 }))
 
+app.use("/", indexRouter);
+app.use("/users", usersRouter);
+
 //Authentication is put here so that users have to authenticate before they access any data in the server
 function auth(req, res, next) {
   console.log(req.session)
+  //This says, is the usr not authenticated? Then send 401 error
   if (!req.session.user) {
-    //signedCookies comes from cookie parser, it automatically parse a signed cookie from the request. If not properly signed it returns false
-    const authHeader = req.headers.authorization;
-    //If the client has not authenticated then we go into the if statement
-    if (!authHeader) {
       const err = new Error("You are not authenticated");
-      res.setHeader("WWW-Authenticate", "Basic");
       err.status = 401;
-      return next(err); //sends authentication err message and request back to the client
-    }
-
-    //Buffer is a global class in node. So no need to require it
-    const auth = Buffer.from(authHeader.split(" ")[1], "base64")
-      .toString()
-      .split(":");
-    const user = auth[0];
-    const pass = auth[1];
-    if (user === "admin" && pass === "password") {
-      req.session.user = 'admin' //Using this to set up the new cookie
-      return next(); //has been authorized
-    } else {
-      const err = new Error("You are not authenticated!");
-      res.setHeader("WWW-Authenticate", "Basic");
-      err.status = 401;
-      return next(err);
-    }
-    //If there is a signed cookie
+      return next(err); //sends error to express to handle the error messaging sent back to client
+    
+      //If there is a signed cookie
   } else {
-    if (req.session.user === "admin") {
+    if (req.session.user === "authenticated") {
       return next();
     } else {
       const err = new Error("You are not authenticated!");
@@ -93,8 +76,7 @@ app.use(auth); //parse the auth header and validate the username and password
 
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use("/", indexRouter);
-app.use("/users", usersRouter);
+
 app.use("/campsites", campsiteRouter);
 app.use("/promotions", promotionRouter);
 app.use("/partners", partnerRouter);
