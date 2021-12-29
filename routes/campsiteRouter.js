@@ -9,6 +9,7 @@ campsiteRouter.route('/')
 
 .get((req, res, next) => {
     Campsite.find() //Queries the database for all the documents in the campsite model
+    .populate('comments.author') //Says when the campsite document is retrieved, populate the comments of the author subdocument by finding the user document that matches the object id that is stored there
     .then( campsites =>{ //accesses the results from the find method 
         res.statusCode = 200
         res.header('Content-Type', 'application/json')
@@ -49,6 +50,7 @@ campsiteRouter.route('/:campsiteId')
 // Allow us to store whatever the client sends as part of the path after the / as a route param named campsiteId
 .get((req, res, next) => {
     Campsite.findById(req.params.campsiteId) //Getting parsed from the HTTP request from whatever the user typed in 
+    .populate('comments.author')
     .then(campsite => {
         res.statusCode = 200
         res.header('Content-Type', 'application/json')
@@ -88,6 +90,7 @@ campsiteRouter.route('/:campsiteId')
 campsiteRouter.route('/:campsiteId/comments')
 .get((req, res, next) => {
     Campsite.findById(req.params.campsiteId) //We do findById and not find because it is looking for a single campsites comment 
+    .populate('comments.author')
     .then( campsite =>{ //accesses the results from the find method 
         if (campsite) { //Accessing just the comments information inside the campsite object
             res.statusCode = 200
@@ -106,6 +109,7 @@ campsiteRouter.route('/:campsiteId/comments')
     Campsite.findById(req.params.campsiteId) //We do findById and not find because it is looking for a single campsites comment 
     .then( campsite =>{ //accesses the results from the find method 
         if (campsite) { //Accessing just the comments information inside the campsite object
+            req.body.author = req.user._id //When the comment is saved it will have the id of the user who submitted the comment 
             campsite.comments.push(req.body)//Creating new campsite info from the info on the request body. Also checks to make sure it matches the Schema
             campsite.save() //saving to the MongoDB Database
             .then(campsite => {
@@ -155,6 +159,7 @@ campsiteRouter.route('/:campsiteId/comments')
 campsiteRouter.route('/:campsiteId/comments/:commentId')
 .get((req, res, next) => {
     Campsite.findById(req.params.campsiteId) //We do findById and not find because it is looking for a single campsites comment 
+    .populate('comments.author')
     .then( campsite =>{ //accesses the results from the find method 
         if (campsite && campsite.comments.id(req.params.commentId)) { //Accessing just the comments information inside the campsite object
             res.statusCode = 200
