@@ -1,5 +1,6 @@
 const express =  require('express')
 const Promotion = require('../models/promotion')
+const authenticate = require('../authenticate')
 
 const promotionRouter = express.Router()
 
@@ -16,7 +17,7 @@ promotionRouter.route('/')
     .catch(err => next(err)) //passes error to express
 })
 
-.post((req, res, next) => {
+.post(authenticate.verifyUser, (req, res, next) => {
     Promotion.create(req.body) //Create new campsite from the info on request body. It will also check the data to make sure it fits the Schema 
     .then(promotion => {
         console.log('Promotion Created', promotion)
@@ -27,12 +28,12 @@ promotionRouter.route('/')
     .catch(err => next(err))
 })
 
-.put((req, res) => {
+.put(authenticate.verifyUser, (req, res) => {
     res.statusCode = 403
     res.end('PUT operation not supported on /promotions')
 })
 
-.delete((req, res,next) => {
+.delete(authenticate.verifyUser, (req, res,next) => {
     Promotion.deleteMany()
     //reponse object tells us how many documents we have deleted 
     .then(response => {
@@ -57,12 +58,12 @@ promotionRouter.route('/:promotionId')
     .catch(err => next(err))
 })
 
-.post((req, res) => {
+.post(authenticate.verifyUser, (req, res) => {
     res.statusCode = 403
     res.end(`POST operation not supported on /promotions/${req.params.promotionId}`);
 })
 
-.put((req, res, next) => {
+.put(authenticate.verifyUser, (req, res, next) => {
     Promotion.findByIdAndUpdate(req.params.promotionId, {
         $set: req.body
     }, { new: true }) //To get back info from updated document as a result of this operation
@@ -75,7 +76,7 @@ promotionRouter.route('/:promotionId')
     .catch(err => next(err))
 })
 
-.delete((req, res, next) => {
+.delete(authenticate.verifyUser, (req, res, next) => {
     Promotion.findByIdAndDelete(req.params.promotionId)
     .then(response => {
         res.statusCode = 200

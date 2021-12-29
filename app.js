@@ -1,12 +1,9 @@
 var createError = require("http-errors");
 var express = require("express");
 var path = require("path");
-var cookieParser = require("cookie-parser");
 var logger = require("morgan");
-const session = require('express-session') //session is used to store information permanantly from session to session unlike cookies that just store it locally
-const FileStore = require('session-file-store')(session) //The require function is returning another function as its return value and we are calling the function with session
 const passport = require('passport')
-const authenticate = require('./authenticate') //This is a file we added to our project
+const config = require('./config')
 
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
@@ -16,7 +13,7 @@ const partnerRouter = require("./routes/partnerRouter");
 
 const mongoose = require("mongoose");
 
-const url = "mongodb://localhost:27017/nucampsite"; //This connects Node.js to MongoDB
+const url = config.mongoUrl
 const connect = mongoose.connect(url, {
   useCreateIndex: true,
   useFindAndModify: false,
@@ -42,41 +39,15 @@ app.use(express.urlencoded({ extended: false }));
   //***Note: not advisable to use cookie parser with express. 
 // app.use(cookieParser("12345-67890-09876-54321")); //This number can be anything, it just needs a string
 
-app.use(session({
-  name: 'session-id',
-  secret: "12345-67890-09876-54321",
-  saveUninitialized: false, //When a new session is created but no updates made, it will not saved and no cookie will be sent since it will be empty
-  resave: false,
-  store: new FileStore() //Creates the new filestore as an object that we can save our session information to the harddisk
-}))
 
 //these two are only needed with session based authentication. Uses passport to check for exisiting sessions with that client. And if so it is loaded from the client as req.user
 app.use(passport.initialize())
-app.use(passport.session()) 
+
 
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
 
-//Authentication is put here so that users have to authenticate before they access any data in the server
-function auth(req, res, next) {
-  console.log(req.user)
-
-  //This says, is the user not authenticated? Then send 401 error
-  if (!req.user) {
-      const err = new Error("You are not authenticated");
-      err.status = 401;
-      return next(err); //sends error to express to handle the error messaging sent back to client
-    
-      //If there authentication, pass the client to the next middleware
-  } else {
-      return next();    
-  }
-}
-
-app.use(auth); //parse the auth header and validate the username and password
-
 app.use(express.static(path.join(__dirname, "public")));
-
 
 app.use("/campsites", campsiteRouter);
 app.use("/promotions", promotionRouter);
