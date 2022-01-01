@@ -17,7 +17,7 @@ partnerRouter.route('/')
     .catch(err => next(err)) //passes error to express
 })
 
-.post(authenticate.verifyUser, (req, res, next) => {
+.post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Partner.create(req.body) //Create new campsite from the info on request body. It will also check the data to make sure it fits the Schema 
     .then(partner => {
         console.log('Partner Created', partner)
@@ -33,7 +33,7 @@ partnerRouter.route('/')
     res.end('PUT operation not supported on /partners')
 })
 
-.delete(authenticate.verifyUser, (req, res,next) => {
+.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res,next) => {
     Partner.deleteMany()
     //reponse object tells us how many documents we have deleted 
     .then(response => {
@@ -63,7 +63,7 @@ partnerRouter.route('/:partnerId')
     res.end(`POST operation not supported on /partners/${req.params.partnerId}`);
 })
 
-.put(authenticate.verifyUser, (req, res, next) => {
+.put(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Partner.findByIdAndUpdate(req.params.partnerId, {
         $set: req.body
     }, { new: true }) //To get back info from updated document as a result of this operation
@@ -76,7 +76,7 @@ partnerRouter.route('/:partnerId')
     .catch(err => next(err))
 })
 
-.delete(authenticate.verifyUser, (req, res, next) => {
+.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Partner.findByIdAndDelete(req.params.partnerId)
     .then(response => {
         res.statusCode = 200

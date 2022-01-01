@@ -17,7 +17,7 @@ promotionRouter.route('/')
     .catch(err => next(err)) //passes error to express
 })
 
-.post(authenticate.verifyUser, (req, res, next) => {
+.post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Promotion.create(req.body) //Create new campsite from the info on request body. It will also check the data to make sure it fits the Schema 
     .then(promotion => {
         console.log('Promotion Created', promotion)
@@ -33,7 +33,7 @@ promotionRouter.route('/')
     res.end('PUT operation not supported on /promotions')
 })
 
-.delete(authenticate.verifyUser, (req, res,next) => {
+.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res,next) => {
     Promotion.deleteMany()
     //reponse object tells us how many documents we have deleted 
     .then(response => {
@@ -63,7 +63,7 @@ promotionRouter.route('/:promotionId')
     res.end(`POST operation not supported on /promotions/${req.params.promotionId}`);
 })
 
-.put(authenticate.verifyUser, (req, res, next) => {
+.put(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Promotion.findByIdAndUpdate(req.params.promotionId, {
         $set: req.body
     }, { new: true }) //To get back info from updated document as a result of this operation
@@ -76,7 +76,7 @@ promotionRouter.route('/:promotionId')
     .catch(err => next(err))
 })
 
-.delete(authenticate.verifyUser, (req, res, next) => {
+.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Promotion.findByIdAndDelete(req.params.promotionId)
     .then(response => {
         res.statusCode = 200
