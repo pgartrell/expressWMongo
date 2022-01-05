@@ -15,7 +15,8 @@ const userSchema = new Schema ({
     admin: {
         type: Boolean,
         default: false //By default when a new user doc is created the admoin will be set to false
-    }
+    }, 
+    facebookId: String,
 })
 
 userSchema.plugin(passportLocalMongoose) //provides us with different methods like the authenticate method to be used on the next file. 

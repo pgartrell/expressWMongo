@@ -1,6 +1,7 @@
 const express = require("express");
 const Campsite = require("../models/campsite");
 const authenticate = require("../authenticate"); //below we will authenticate for every end point below
+const cors = require('./cors') //*Note the ./ is important so it knows you are trying to import the nors file we created and not the actual module itself
 
 const campsiteRouter = express.Router();
 
@@ -8,7 +9,8 @@ const campsiteRouter = express.Router();
 campsiteRouter
   .route("/")
 
-  .get((req, res, next) => {
+  .options(cors.corsWithOptions, (req, res) => res.sendStatus(200)) //Handles pre-flight request
+  .get(cors.cors, (req, res, next) => {
     Campsite.find() //Queries the database for all the documents in the campsite model
       .populate("comments.author") //Says when the campsite document is retrieved, populate the comments of the author subdocument by finding the user document that matches the object id that is stored there
       .then((campsites) => {
@@ -20,7 +22,7 @@ campsiteRouter
       .catch((err) => next(err)); //passes error to express
   })
 
-  .post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+  .post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Campsite.create(req.body) //Create new campsite from the info on request body. It will also check the data to make sure it fits the Schema
       .then((campsite) => {
         console.log("Campsite Created", campsite);
@@ -31,12 +33,13 @@ campsiteRouter
       .catch((err) => next(err));
   })
 
-  .put(authenticate.verifyUser, (req, res) => {
+  .put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     res.statusCode = 403;
     res.end("PUT operation not supported on /campsites");
   })
 
   .delete(
+    cors.corsWithOptions,
     authenticate.verifyUser,
     authenticate.verifyAdmin,
     (req, res, next) => {
@@ -54,8 +57,9 @@ campsiteRouter
 campsiteRouter
   .route("/:campsiteId")
 
+  .options(cors.corsWithOptions, (req, res) => res.sendStatus(200))
   // Allow us to store whatever the client sends as part of the path after the / as a route param named campsiteId
-  .get((req, res, next) => {
+  .get(cors.cors, (req, res, next) => {
     Campsite.findById(req.params.campsiteId) //Getting parsed from the HTTP request from whatever the user typed in
       .populate("comments.author")
       .then((campsite) => {
@@ -66,14 +70,14 @@ campsiteRouter
       .catch((err) => next(err));
   })
 
-  .post(authenticate.verifyUser, (req, res) => {
+  .post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     res.statusCode = 403;
     res.end(
       `POST operation not supported on /campsites/${req.params.campsiteId}`
     );
   })
 
-  .put(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+  .put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Campsite.findByIdAndUpdate(
       req.params.campsiteId,
       {
@@ -91,6 +95,7 @@ campsiteRouter
   })
 
   .delete(
+    cors.corsWithOptions,
     authenticate.verifyUser,
     authenticate.verifyAdmin,
     (req, res, next) => {
@@ -106,7 +111,9 @@ campsiteRouter
 
 campsiteRouter
   .route("/:campsiteId/comments")
-  .get((req, res, next) => {
+
+  .options(cors.corsWithOptions, (req, res) => res.sendStatus(200))
+  .get(cors.cors, (req, res, next) => {
     Campsite.findById(req.params.campsiteId) //We do findById and not find because it is looking for a single campsites comment
       .populate("comments.author")
       .then((campsite) => {
@@ -125,7 +132,7 @@ campsiteRouter
       .catch((err) => next(err)); //passes error to express
   })
 
-  .post(authenticate.verifyUser, (req, res, next) => {
+  .post(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
     Campsite.findById(req.params.campsiteId) //We do findById and not find because it is looking for a single campsites comment
       .then((campsite) => {
         //accesses the results from the find method
@@ -150,7 +157,7 @@ campsiteRouter
       .catch((err) => next(err));
   })
 
-  .put(authenticate.verifyUser, (req, res) => {
+  .put(cors.corsWithOptions, authenticate.verifyUser, (req, res) => {
     res.statusCode = 403;
     res.end(
       `PUT operation not supported on /campsites/${req.params.campsiteId}/comments`
@@ -158,6 +165,7 @@ campsiteRouter
   })
 
   .delete(
+    cors.corsWithOptions,
     authenticate.verifyUser,
     authenticate.verifyAdmin,
     (req, res, next) => {
@@ -190,7 +198,9 @@ campsiteRouter
 
 campsiteRouter
   .route("/:campsiteId/comments/:commentId")
-  .get((req, res, next) => {
+
+  .options(cors.corsWithOptions, (req, res) => res.sendStatus(200))
+  .get(cors.cors, (req, res, next) => {
     Campsite.findById(req.params.campsiteId) //We do findById and not find because it is looking for a single campsites comment
       .populate("comments.author")
       .then((campsite) => {
@@ -214,14 +224,14 @@ campsiteRouter
       .catch((err) => next(err)); //passes error to express
   })
 
-  .post(authenticate.verifyUser, (req, res) => {
+  .post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     res.statusCode = 403;
     res.end(
       `POST operation not supported on /campsites/${req.params.campsiteId}/comments/${req.params.commentId}`
     );
   })
 
-  .put(authenticate.verifyUser, (req, res, next) => {
+  .put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Campsite.findById(req.params.campsiteId) //We do findById and not find because it is looking for a single campsites comment
       .then((campsite) => {
         //accesses the results from the find method
@@ -265,7 +275,7 @@ campsiteRouter
       .catch((err) => next(err)); //passes error to express
   })
 
-  .delete(authenticate.verifyUser, (req, res, next) => {
+  .delete(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
     Campsite.findById(req.params.campsiteId) //We do findById and not find because it is looking for a single campsites comment
       .then((campsite) => {
         if (
